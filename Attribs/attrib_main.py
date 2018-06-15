@@ -3,7 +3,7 @@ import pandas as pd
 import sheets as sh
 import config
 import ast
-import op_functions as opf
+import main_func as opf
 import attrib_func as af
 
 line_list = []
@@ -20,8 +20,7 @@ s = sheets.index('ATTRIBUTES')
     # the conversion dictionary
 attrib = sh.sheet_to_dict(reader, s, 'Attribute', 'Code')
 attrib_select = sh.sheet_to_dict(reader, s, 'Attribute', 'Input')
-attrib_conversion = sh.sheet_to_dict(reader, s, 'Attribute', 'Binary')
-
+attrib_conversion = sh.sheet_to_dict(reader, s, 'Attribute', 'Binary', dict_values=True)
 
 with open(config.ukb_file) as f:
     header = f.readline()
@@ -34,6 +33,7 @@ with open(config.ukb_file) as f:
     for a in attrib:
 
         if attrib_select[a] in ('F', 'A'): # There will only be one column associated with this attribute
+
             attrib_index[a] = opf.get_header_indices(headers, attrib[a])
 
         else: # Output all values into separate columns
@@ -57,6 +57,9 @@ with open(config.ukb_file) as f:
         fieldnames.append(a)
 
     lines = f.readlines()
+
+    #print attrib_conversion
+    #print attrib_conversion.keys()
 
     for e, line in enumerate(lines):
         # Fix space issue in textfile. 'newline' is a patient row to be added to the output later. Patient ID is added first.
@@ -88,4 +91,4 @@ with open(config.ukb_file) as f:
 
 
 attrib_df = pd.DataFrame(line_list, columns=fieldnames)
-#attrib_df.to_csv('attrib_pull_main.csv')
+attrib_df.to_csv('attrib_pull_main.csv')

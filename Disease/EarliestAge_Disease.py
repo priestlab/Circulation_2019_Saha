@@ -25,7 +25,7 @@ for s in sheets:
     for k in diseases[s]:
         diseases[s][k] = [c.replace('*', '') for c in diseases[s][k]]
 
-"""
+
 # (DO-NOT-CHANGE
 f = open(config.ukb_file)
 header = f.readline()
@@ -108,7 +108,7 @@ with open('Disease_Ages_prehes.csv', 'w') as c_file:
     c_writer = csv.DictWriter(c_file, fieldnames=fieldnames)
     c_writer.writeheader()
     c_writer.writerows(line_list)
-"""
+
 # ------------------------------- HES ----------------------------------
 
 
@@ -200,7 +200,7 @@ def merge_ukb_hes(ukb_file, age_disease_df, overlap_columns):
 
     print "Loaded UKB File. Merging diseases ages..."
     # Merge Main File Output and HES File Output
-    merged_file = pd.merge(ukb_file, age_disease_df, on='Patient_ID', suffixes=('_x', '_y'))
+    merged_file = pd.merge(ukb_file, age_disease_df, how='left', on='Patient_ID', suffixes=('_x', '_y'))
     # Get the minimum disease ages between self-reported data and HES file.
     for d in overlap_columns:
         print d

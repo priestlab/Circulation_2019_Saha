@@ -15,8 +15,6 @@ def single_output_conversion(list_of_values, convert_dict=None, default_value = 
             return return_value
         else:
             return single_value
-    elif (not input_value) and len(list_of_values) > 1:
-        assert(len(list_of_values) > 1, "Must Specify Input Value for multiple values")
 
     if input_value == 'F':
         next_value = next((v for v in list_of_values), None)
@@ -30,9 +28,9 @@ def single_output_conversion(list_of_values, convert_dict=None, default_value = 
                     return_value = k
 
     if input_value == 'A':
-        assert(convert_dict == None, "You must have a conversion dictionary if you want to account all values")
         if len(list_of_values) > 0 and (default_value is not None):
             return_value = default_value
+
         for k in convert_dict:
             if any(patient_val in convert_dict[k] for patient_val in list_of_values):
                 return_value = k

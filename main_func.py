@@ -1,19 +1,19 @@
 import pandas as pd
 
 
-def get_header_indices(headers, field_number, age_field_number=None):
+def get_header_indices(headers, bb_field, bb_field_age=None):
     """ Returns a list of indices or a list of tuples with indices that correspond to specific fields in the file"""
 
     # If there is no age field, return a list of indices
     field_indices = []
-    if not age_field_number:
+    if not bb_field_age:
         for h in headers:
             field_code = h.split('_', 1)[1] # e.g. - Looks at 20002_0_0, from n_20002_0_0
-            if (field_code.startswith(str(field_number)+'_')) or (field_code == str(field_number)):
+            if (field_code.startswith(str(bb_field)+'_')) or (field_code == str(bb_field)):
                 field_indices.append(headers.index(h))
     else:
         for h in headers:
-            if h.split('_')[1] == str(age_field_number):
+            if h.split('_')[1] == str(bb_field_age):
                 age_string  = h.rsplit('_', 2)[0]   # e.g. - age_string = n_20009, from n_20009_0_0
                 break
 
@@ -23,7 +23,7 @@ def get_header_indices(headers, field_number, age_field_number=None):
         #        The ages for 20009 correspond to the field 20002.
 
         for h in headers:
-            if h.split('_')[1] == str(field_number):
+            if h.split('_')[1] == str(bb_field):
                 array_pos = '_'+h.split('_', 2)[2] # e.g.- array_pos = "_0_0" from n_20002_0_0
                 field_indices.append((headers.index(h), headers.index(age_string+array_pos)))
 
@@ -100,9 +100,10 @@ def match_codes(key_codes, patient_codes):
 
 
     # Ensure no null values in key_codes and patient_codes
+
     if type(key_codes) == dict:
         key_codes = {str(k):str(key_codes[k]) for k in key_codes.keys() if str(k) != 'nan' and str(key_codes[k]) != 'nan'}
-    elif type(key_codes) == list:
+    else:
         key_codes = [str(c) for c in key_codes if str(c) != 'nan']
 
     patient_codes = [str(c) for c in patient_codes if str(c) != 'nan']
@@ -119,6 +120,7 @@ def match_codes(key_codes, patient_codes):
     matched_codes = []
 
     # Partially matches codes that have an asterisk at the end. Exact matches for codes without an asterisk
+
     for p in patient_codes:
         matched_codes.extend([c for c in code_list if p.startswith(c)])
 
@@ -140,10 +142,11 @@ def get_min_age(patient_code_age_tuples, key_codes, age_criteria_dict = None):
 
     for k, v in patient_code_age_tuples:
         if k in key_codes:
-            if (float(v) >= 0) and (v is not None) and (float(v) < min_age):
+            if (float(v) >= 0) and (v is not None):
                 if age_criteria_dict and (float(v) >= age_criteria_dict[k]):
                     continue
-                min_age = float(v)
+                if (float(v) < min_age):
+                    min_age = float(v)
                 available_codes.append(k)
 
     return min_age, available_codes

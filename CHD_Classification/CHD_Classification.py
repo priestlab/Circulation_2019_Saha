@@ -41,7 +41,8 @@ asd_pfo =  op_sheets.asd_pfo    # ASD/PFO Prior To STROKE
 stroke = op_sheets.stroke
 
 metacats = op_sheets.metacats   # Meta-Categories
-"""
+
+
 # ----------------------------------------------
 
 # (DO-NOT-CHANGE
@@ -77,6 +78,10 @@ fieldnames.append('SELFREP_Age_At_CHD')
 
 # A List of Malformations: Patients will be excluded if they have the following AND they do NOT have CHD (CHD = 0).
 exclude_if_non_chd = ['THORACIC_AO_DISSECTION', 'ENDOCARDITIS', 'AORTIC_ROOT', 'PULM_HYPERTENSION', 'HEART_TRANSPLANT', 'HCM', 'PERSISTENT_FETAL_CIRCULATION']
+# A List of Patient IDs for patients that are no longer in the study
+patients_not_in_study = ['1000077', '1367063', '1397657', '1636806', \
+'1731986', '1772946', '2019932', '2315919', '2459107', '2519198', '2697280', \
+'2934363', '3207340', '3576579', '3952632', '3977658', '4220208', '4502583', '4842334', '5094069', '5299667', '5533267', '5537562', '5638667', '5693358', '5999057']
 
 # Counters to Keep Track of Each Step
 ALL_UKB_COUNT = 0
@@ -98,6 +103,7 @@ for e, line in enumerate(lines):
     newline = {'Patient_ID': line[0]}
     if newline['Patient_ID'].isspace() or len(newline['Patient_ID']) == 0:
         break
+    ALL_UKB_COUNT += 1
 
     # Returns a set of values associated with Year of Birth. Since we know there is only one value, we "pop" that value out of the set
     newline['Year_Of_Birth'] = opf.get_patient_vals(line, year_of_birth_index).pop()
@@ -127,7 +133,7 @@ for e, line in enumerate(lines):
             opf.match_codes(selfrep_mc_ex_mals, selfrep_mc_line)
 
     # Exclude Patients
-    if len(exclusion) > 0:
+    if (len(exclusion) > 0) or (newline['Patient_ID'] in patients_not_in_study):
         COMPLETE_EXCLUSION_COUNT += 1
         continue
 
@@ -178,6 +184,7 @@ for e, line in enumerate(lines):
         selfrep_mc_codes_and_ages = opf.get_patient_vals(line, selfrep_mc_index, return_both=True)
         selfrep_op_codes_and_ages = opf.get_patient_vals(line, selfrep_op_index, return_both=True)
 
+
         # Returns matching CHD codes
         selfrep_mc_chd_codes = opf.match_codes(selfrep_mc_mals.keys(), selfrep_mc_line)
         selfrep_op_chd_codes = opf.match_codes(selfrep_op_mals.keys(), selfrep_op_line)
@@ -202,10 +209,12 @@ for e, line in enumerate(lines):
     newline['EXCLUDE_IF_NON_CHD'] = opf.match_codes(conditional_mals, exclude_if_non_chd)
     newline['EXCLUDE_IF_NON_CHD'] = ','.join(newline['EXCLUDE_IF_NON_CHD']) # Outputs Python list as comma-separated string of values
 
+    if newline['CHD'] == 0:
+        inclusion = []
+
     newline['Malformation'] = ','.join(set(inclusion))  # Returns list as comma-separated values
 
     line_list.append(newline)
-    ALL_UKB_COUNT += 1
 
     if e%25000 == 0:
         print e
@@ -226,7 +235,7 @@ with open('UKB_prehes.csv', 'w') as c_file:
     c_writer.writeheader()
     c_writer.writerows(line_list)
 
-"""
+
 # --------------------HES---------------------------------
 
 hes_translated = hes_func.translate_file('app13721', 'app15860')
@@ -260,7 +269,6 @@ for k in selfrep_op_age_mals.keys():
     age[k] = selfrep_op_age_mals[k]
 
 print age
-
 
 # ------------ Define HES functions --------------------------
 def has_mal(row, mal_type):
@@ -345,7 +353,7 @@ def reassign_mals(chd, existing_mals, keep_mals, asd_pfo_true):
         remove.append('ASD_PFO_COND')
 
     # Delete all malformations if CHD = 0 and no conditional malformation criteria was met.
-    if (keep_mals == '') and (asd_pfo_true == 0) and (chd == 0):
+    if (keep_mals == '') and (asd_pfo_true == 0) and (chd != 1):
         return None
 
     # Remove unneeded malformations from original UKB file
@@ -406,13 +414,13 @@ print 'AGE CRITERIA: ' + str(len(grouped_patients[grouped_patients['Keep_Mals'] 
 print 'ASD/PFO CRITERIA: ' + str(len(grouped_patients[grouped_patients['ASD_PFO_TRUE'] == 1]['Patient_ID'].unique()))
 print 'CONFIRMED_COUNT_3: ' + str(len(ukb_file2[ukb_file2['CHD'] == 1]['Patient_ID'].unique()))
 print 'CONTROL_COUNT_3: ' + str(len(ukb_file2[ukb_file2['CHD'] == 0]['Patient_ID'].unique()))
-print 'CONTROL_COUNT_FINAL: ' + str(len(ukb_file2[(ukb_file2['CHD'] == 0)&(ukb_file2['EXCLUDE_IF_NON_CHD']==False)]['Patient_ID'].unique()))
+print 'CONTROL_COUNT_FINAL: ' + str(len(ukb_file2[(ukb_file2['CHD'] == 0)&(ukb_file2['EXCLUDE_IF_NON_CHD'].isnull())]['Patient_ID'].unique()))
 
 # Assigns metacategory based on malformation
-ukb_file2['MetaCategory'] = ukb_file2['Malformation'].apply(lambda all_mals: ','.join(sorted({metacats[x] for x in all_mals.split(',') if x in metacats.keys()})) if all_mals else None)
+ukb_file2['MetaCategory'] = ukb_file2['Malformation'].apply(lambda all_mals: ','.join(set([tup[0] for tup in metacats if tup[1] in all_mals.split(',')])) if all_mals else None)
 
 # Drops irrelevant columns
 ukb_file2.drop(['has_asd_pfo', 'has_stroke', 'ASD_PFO_TRUE', 'Keep_Mals'], axis=1, inplace=True)
 
 # Removes control patients from dataset if they have malformations we want to exclude
-ukb_file2[(ukb_file2['CHD']==0) & (~ukb_file2['EXCLUDE_IF_NON_CHD'].isna())].to_csv("UKB.csv")
+ukb_file2[~((ukb_file2['CHD'] == 0)&(~ukb_file2['EXCLUDE_IF_NON_CHD'].isnull()))].to_csv("UKB.csv")

@@ -1,14 +1,13 @@
 import csv
 import pandas as pd
 import config
-import sheets as sh
 import main_func as opf
 
 # Your Variables
 icd10_codes_you_want = ['E66', 'E78', 'E87']
 
 def process_file(headers, output_column_names):
-    """You may modify this function."""
+    """This function is used to find and specify which fields in Biobank you are interested in and what columns you want in 	your output file. You may modify this function."""
 
     # Must Specify Field Numbers of Fields of Interest
     field_index = {}
@@ -23,7 +22,7 @@ def process_file(headers, output_column_names):
 
 
 def next_row(line, output_row, output_column_names, field_index):
-    """You may modify this function."""
+    """This function lets you handle each row in the biobank file one at a time. Expects a dictionary of values that will become one line of output in your output file. All biobank values will be of type 'string', make sure to convert to float or int when comparing numerical values but not codes that may start with 0 (e.g. - ICD9). You may modify this function."""
 
     icd10_patient_values = opf.get_patient_vals(line, field_index['ICD10'])
 

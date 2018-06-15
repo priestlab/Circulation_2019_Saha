@@ -72,4 +72,4 @@ for s in sheets:
                 }
 
     elif s == 'CHD_METACATEGORIES':
-        metacats = sh.sheet_to_dict(reader, s, 'METACATEGORY', 'MALFORMATIONS')
+        metacats = sh.sheet_to_tuple(reader, s, 'METACATEGORY', 'MALFORMATIONS')
