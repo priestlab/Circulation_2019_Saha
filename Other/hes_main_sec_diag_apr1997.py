@@ -19,12 +19,12 @@ for c in icd9_cols:
     hes_translated[c] = hes_translated[c].astype('str')
 
 # Open our file
-ukb_file = pd.read_csv('marelli_prehes2.csv')
+ukb_file = pd.read_csv('Random_Data_Extract.csv')
 
 print "Translated HES File. All Files Loaded"
 
 # Get all patients where CHD = 2 and merge on patient ID
-hes_all_patients = pd.merge(ukb_file[['Patient_ID', 'Year_Of_Birth_0_0']], hes_translated, on='Patient_ID')
+hes_all_patients = pd.merge(ukb_file[['Patient_ID', 'Year_Of_Birth']], hes_translated, on='Patient_ID')
 
 
 def get_years(birth_year, *args):
@@ -35,8 +35,8 @@ def get_years(birth_year, *args):
             return event_year - birth_year
     return None
 
-hes_all_patients['icd_years'] = hes_all_patients.apply(lambda row: get_years(row['Year_Of_Birth_0_0'], row['epistart'], row['admidate'], row['epiend'], row['disdate']), axis=1)
-hes_all_patients['opcs_years'] = hes_all_patients.apply(lambda row: get_years(row['Year_Of_Birth_0_0'], row['epistart'], row['admidate'], row['opdate'], row['epiend'], row['disdate']), axis=1)
+hes_all_patients['icd_years'] = hes_all_patients.apply(lambda row: get_years(row['Year_Of_Birth'], row['epistart'], row['admidate'], row['epiend'], row['disdate']), axis=1)
+hes_all_patients['opcs_years'] = hes_all_patients.apply(lambda row: get_years(row['Year_Of_Birth'], row['epistart'], row['admidate'], row['opdate'], row['epiend'], row['disdate']), axis=1)
 
 print "Translated Years"
 

@@ -28,13 +28,7 @@ def to_Dict(sheet_dict):
     return sheet_dict
 
 def sheet_to_dict(reader, sheet, keys_column, value_column, converters = None, dict_values = False):
-    """ The program outputs a mapping dictionary where each key will correspond to the neighboring value.
-
-    keys_column (required): list of keys
-    values_column (required): list of values
-    converters (optional): Converts data type of values (e.g. - The ICD9 value '0931' will be read as an integer unless specified as a string)
-
-    """
+    """The program outputs a dictionary based on two columns in an Excel Sheet."""
 
     c_df = reader.parse(sheet, converters = converters)
 
@@ -52,13 +46,7 @@ def sheet_to_dict(reader, sheet, keys_column, value_column, converters = None, d
 
 
 def sheet_to_tuple(reader, sheet, keys_column, value_column, converters = None, dict_values = False):
-    """ The program outputs a list of tuples.
-
-    keys_column (required): list of keys
-    values_column (required): list of values
-    converters (optional): Converts data type of values (e.g. - The ICD9 value '0931' will be read as an integer unless specified as a string)
-
-    """
+    """The program outputs a list of tuples based on two columns in an Excel Sheet."""
 
     c_df = reader.parse(sheet, converters = converters)
 

@@ -1,11 +1,13 @@
 import pandas as pd
 
-old_df = pd.read_csv('marelli6560_Feb23.csv')
-new_df = pd.read_csv('CHD_Classification_June13.csv')
+old_df = pd.read_csv('RandomExtract1.csv')
+new_df = pd.read_csv('RandomExtract2.csv')
 
 cols = [c for c in new_df.columns if c in old_df]
 
 mdf = pd.merge(old_df[old_df['CHD']==1][cols], new_df[cols], on='Patient_ID')
+
+concatenated_columns = ['Malformation', 'MetaCategory']
 
 
 def check_count(this_df, df_name, column_name):
@@ -23,13 +25,13 @@ def check_count(this_df, df_name, column_name):
 
 
 for c in cols:
-    if (c=='Malformation') or (c=='MetaCategory'):
+    if c in concatenated_columns:
         check_count(old_df[old_df['CHD'] == 0], 'Old Data', c)
         check_count(new_df, 'New Data', c)
 
 print 'Number of Mismatched Entries By Column'
 for c in cols:
-    if (c != 'Patient_ID') and (c!='Malformation') and (c!='MetaCategory'):
+    if (c != 'Patient_ID') and (c not in concatenated_columns):
         print c
         match_df = mdf[mdf[c+'_x'] != mdf[c+'_y']][['Patient_ID', c+'_x', c+'_y']].dropna()
         print len(match_df)

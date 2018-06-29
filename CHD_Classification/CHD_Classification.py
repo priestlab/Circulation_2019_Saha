@@ -3,7 +3,6 @@ import pandas as pd
 import config
 import op_sheets
 import main_func as opf
-import hes_func
 
 
 # From Excel Sheets with Codes of Interest. ------
@@ -163,7 +162,7 @@ for e, line in enumerate(lines):
 
     condition = False
     if unconfirmed_chd:
-        non_chd_malformations = opf.has_condition(cond_dict, inclusion, conditional_mals)
+        non_chd_malformations = opf.coexist(cond_dict, inclusion, conditional_mals)
         condition = len(non_chd_malformations) > 0  # If there are non_chd_malformations, condition is true
 
     if unconfirmed_chd and condition:
@@ -238,28 +237,20 @@ with open('UKB_prehes.csv', 'w') as c_file:
 
 # --------------------HES---------------------------------
 
-hes_translated = hes_func.translate_file('app13721', 'app15860')
+hes_file = pd.read_csv(config.hes_file)
 
 # Indexes the column for each type of code
-icd10_cols = [c for c in hes_translated.columns if 'diag_icd10' in c]
-icd9_cols = [c for c in hes_translated.columns if 'diag_icd9' in c]
-opcs_cols = [c for c in hes_translated.columns if 'oper4' in c]
+icd10_cols = [c for c in hes_file.columns if 'diag_icd10' in c]
+icd9_cols = [c for c in hes_file.columns if 'diag_icd9' in c]
+opcs_cols = [c for c in hes_file.columns if 'oper4' in c]
 
 # Converts ICD9 codes to String
 for c in icd9_cols:
-    hes_translated[c] = hes_translated[c].astype('str')
+    hes_file[c] = hes_file[c].astype('str')
 
 # Open our file and merge all unconfirmed CHD Patients with the HES File
 ukb_file = pd.read_csv('UKB_prehes.csv')
-merge_file = pd.merge(ukb_file[ukb_file['CHD'] == 2][['Patient_ID', 'Year_Of_Birth']], hes_translated, on='Patient_ID')
-
-# -- Calculate Ages --
-# - icd_years: (For ICD9 and ICD10), does not take operation date into account
-# - opcs_years: (For OPCS), takes all dates into account
-merge_file['icd_years'] = merge_file.apply(lambda row: hes_func.get_years(row['Year_Of_Birth'], row['epistart'], row['admidate'], row['epiend'], row['disdate']), axis=1)
-merge_file['opcs_years'] = merge_file.apply(lambda row: hes_func.get_years(row['Year_Of_Birth'], row['epistart'], row['admidate'], row['opdate'], row['epiend'], row['disdate']), axis=1)
-
-print "Translated Years"
+merge_file = pd.merge(ukb_file[ukb_file['CHD'] == 2][['Patient_ID', 'Year_Of_Birth']], hes_file, on='Patient_ID')
 
 # Creates an Age Dictionary with Malformations:
 age = {}
@@ -298,13 +289,14 @@ def has_mal(row, mal_type):
     return 2000
 
 
-def earliest_age_at_diagnosis(stroke, asd_pfo):
+def earliest_age_at_diagnosis(patient_id, stroke, asd_pfo):
     """ Returns 1 if the patient's earliest diagnosis of ASD/PFO occurred before their earliest Stroke"""
+
     if asd_pfo != 2000:
         if stroke == 2000: # If the patient does not have stroke but has ASD/PFO, chd=1
             return 1
         elif stroke > asd_pfo: # If the patient had a stroke after they had asd/pfo, chd=1
-                return 1
+            return 1
         else:
             return 0
     else:
@@ -388,7 +380,7 @@ grouped_patients['Keep_Mals'] = grouped_patients['Keep_Mals'].apply(lambda mals:
 
 
 # Checks if the earliest ASD/PFO did not have strokes prior to it
-grouped_patients['ASD_PFO_TRUE'] = grouped_patients.apply(lambda row: earliest_age_at_diagnosis(row['has_stroke'], row['has_asd_pfo']), axis=1)
+grouped_patients['ASD_PFO_TRUE'] = grouped_patients.apply(lambda row: earliest_age_at_diagnosis(row['Patient_ID'], row['has_stroke'], row['has_asd_pfo']), axis=1)
 
 
 
@@ -420,7 +412,7 @@ print 'CONTROL_COUNT_FINAL: ' + str(len(ukb_file2[(ukb_file2['CHD'] == 0)&(ukb_f
 ukb_file2['MetaCategory'] = ukb_file2['Malformation'].apply(lambda all_mals: ','.join(set([tup[0] for tup in metacats if tup[1] in all_mals.split(',')])) if all_mals else None)
 
 # Drops irrelevant columns
-ukb_file2.drop(['has_asd_pfo', 'has_stroke', 'ASD_PFO_TRUE', 'Keep_Mals'], axis=1, inplace=True)
+#ukb_file2.drop(['has_asd_pfo', 'has_stroke', 'ASD_PFO_TRUE', 'Keep_Mals'], axis=1, inplace=True)
 
 # Removes control patients from dataset if they have malformations we want to exclude
 ukb_file2[~((ukb_file2['CHD'] == 0)&(~ukb_file2['EXCLUDE_IF_NON_CHD'].isnull()))].to_csv("UKB.csv")

@@ -4,7 +4,6 @@ import sheets as sh
 import config
 import ast
 import main_func as opf
-import attrib_func as af
 
 line_list = []
 
@@ -80,7 +79,7 @@ with open(config.ukb_file) as f:
             if a in ('Paternal_CVD', 'Maternal_CVD'):
                 default_value = 0
 
-            newline[a] = af.single_output_conversion(list_of_values=attrib_values, convert_dict=attrib_conversion[a], default_value=default_value, input_value=attrib_select[a])
+            newline[a] = opf.single_output_conversion(list_of_values=attrib_values, conversion=attrib_conversion[a], default_value=default_value, input_value=attrib_select[a])
 
 
         line_list.append(newline)

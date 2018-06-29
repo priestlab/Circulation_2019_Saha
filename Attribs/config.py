@@ -2,7 +2,7 @@
 
 ukb_file = 'DATAFILES/app15860_fixed.txt'
 codes_sheet = "CHD_phenotypes_MarelliMetacat_6560.xlsx"
-hes_file = 'DATAFILES/hes_all_main_sec_diag.csv'
+hes_file = 'DATAFILES/hes_main_sec_translated.csv'
 hes_translator = 'DATAFILES/eid_translator'
 
 output_filename = "ukb_basic_pull.csv"

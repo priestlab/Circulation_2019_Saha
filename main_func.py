@@ -47,29 +47,15 @@ def get_patient_vals(line, index_list, return_both = False):
 
 
 def ends_with(values, partial_string, all_vals=True):
-    """ Returns boolean if partial_string is contained at the end a value
-        if all_vals is true, all values must contain the partial string,
-        otherwise some values must contain the partial sring."""
+    """Returns a boolean (True/False) if values end with the partial string."""
     if all_vals and (len(values) > 0):
         return all(v.endswith(partial_string) for v in values)
     else:
         return any(v.endswith(partial_string) for v in values)
 
 
-def has_condition(tuple_list, main_values, conditional_values, return_existing_cond = False):
-    """ If two values from a tuple exist in the main values and conditional values respectively,
-        return main_values where tuple exists, unless return_existing_cond = True, then return both main_values and conditional_values where tuple exists.
-
-        e.g. - main_values = ['HEART SURGERY', 'ASD PFO']
-               We do not want the following values to exist in a patient: ("HEART SURGERY", "AORTITIS")
-               If HEART SURGERY exists in the patient's main values and AORTITIS exists in the patient's conditional values, HEART SURGERY is removed from main values.
-               main_values = ['HEART SURGERY']    <- Function Output (return_existing_cond = False)
-               conditional_values = ['AORTITIS']    <- Function Output (return_existing_cond = True)
-
-        tuple_list (required): Accepts a list or set of tuples
-        main_values (required): Accepts a list of values that may or may not match the first instance of the tuple
-        conditional_values (required): Accepts a list of values that may or may not match the second instance of the tuple
-        return_existing_cond (optional): If true, returns both main and conditional values where paired tuple values exist. Otherwise, returns just main_values."""
+def coexist(tuple_list, main_values, conditional_values, return_existing_cond = False):
+    """ Say you have a list of tuples. Each tuple contains two values which may co-exist. This function returns the values that coexist based on the values the patient has"""
 
     existing_main_values = []
     existing_conditional_values = []
@@ -84,23 +70,9 @@ def has_condition(tuple_list, main_values, conditional_values, return_existing_c
 
 
 def match_codes(key_codes, patient_codes):
-    """ If the key_codes is a dictionary. The patient codes will be matched to the keys and return the values of those keys. Otherwise it will return the matching codes for key_codes and patient_codes.
-
-    e.g. - Key_Codes_Dict = {X101: 'Heart_Surgery'}
-           Key_Codes_List = [X101]
-           Patient_Codes = [X101, I880]
-
-           codes_of_interest(Key_Codes_Dict, Patient_Codes)
-                RETURNS: ['Heart_Surgery']
-
-           codes_of_interest(Key_Codes_List, Patient_Codes)
-                RETURNS: [X101]
-
-    """
-
+    """The key_codes will be partially matched to the patient_codes and return the values of those keys if key_codes is a dictionary. Otherwise it will return the matching codes. A partial match means: “E50” can match patient values “E500”, “E501”, and “E50” for example"""
 
     # Ensure no null values in key_codes and patient_codes
-
     if type(key_codes) == dict:
         key_codes = {str(k):str(key_codes[k]) for k in key_codes.keys() if str(k) != 'nan' and str(key_codes[k]) != 'nan'}
     else:
@@ -131,19 +103,14 @@ def match_codes(key_codes, patient_codes):
 
 
 def get_min_age(patient_code_age_tuples, key_codes, age_criteria_dict = None):
-    """ Returns the Minimum age and codes where the codes match the key codes. If there is an age criteria, returns an age that is LESS than those in age_criteria_dict.
-        - patient_code_age_tuples: [(code1, age1), (code1, age2), (code2, age3)...]
-        - key_codes: [code1, code3, ...]
-        - age_criteria_dict: {code1: age_criteria_1, code3: age_criteria2}
-        # Returns the minimum of age1 and age2, IF they're less than age_criteria_1
-    """
+    """ Returns the Minimum age and codes where the codes match the key codes"""
     min_age = 2000
     available_codes = []
 
     for k, v in patient_code_age_tuples:
         if k in key_codes:
             if (float(v) >= 0) and (v is not None):
-                if age_criteria_dict and (float(v) >= age_criteria_dict[k]):
+                if age_criteria_dict and (k in age_criteria_dict) and (float(v) >= age_criteria_dict[k]):
                     continue
                 if (float(v) < min_age):
                     min_age = float(v)
@@ -152,9 +119,41 @@ def get_min_age(patient_code_age_tuples, key_codes, age_criteria_dict = None):
     return min_age, available_codes
 
 
-def merge_dicts(*args):
-    return_dict = {}
-    for a in args:
-        for key in a:
-            return_dict[key] = a[key]
-    return return_dict
+def single_output_conversion(list_of_values, conversion=None, default_value = None, input_value=None):
+    """Converts a single value or a list of values into a different value for readability and analysis"""
+    return_value = None
+
+    if (not input_value) and len(list_of_values) == 1:
+        single_value = list(list_of_values)[0]
+        if conversion:
+            if single_value and (default_value is not None):
+                return_value = default_value
+            for k in conversion:
+                if single_value in conversion[k]:
+                    return_value = k
+            return return_value
+        else:
+            return single_value
+
+    if input_value == 'F':
+        next_value = next((v for v in list_of_values), None)
+        if next_value == '':
+            return None
+        if conversion:
+            if next_value and (default_value is not None):
+                return_value = default_value
+            for k in conversion:
+                if next_value in conversion[k]:
+                    return_value = k
+
+    if input_value == 'A':
+        if len(list_of_values) > 0 and (default_value is not None):
+            return_value = default_value
+
+        for k in conversion:
+            if any(patient_val in conversion[k] for patient_val in list_of_values):
+                return_value = k
+                break
+
+
+    return return_value
